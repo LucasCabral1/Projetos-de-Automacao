@@ -68,25 +68,21 @@ def organize_files(source_folder, categories):
     for filename in items_in_folder:
         item_path = os.path.join(source_folder, filename)
         
-        # --- 1. Lógica para ARQUIVOS (Modificada) ---
         if os.path.isfile(item_path):
             extension = os.path.splitext(filename)[1].lower()
 
             if not extension:
                 found_category_path = ["Other"]
             else:
-                # Usa uma lista para construir o caminho (ex: ["Documents", "PDFs"])
                 found_category_path = None 
                 
                 for category, extensions_or_subdict in categories.items():
                     
-                    # Se for uma categoria simples (ex: "Images": ('.jpg', ...))
                     if isinstance(extensions_or_subdict, tuple):
                         if extension in extensions_or_subdict:
                             found_category_path = [category]
                             break
                     
-                    # Se for uma categoria aninhada (ex: "Documents": { ... })
                     elif isinstance(extensions_or_subdict, dict):
                         for sub_category, sub_extensions in extensions_or_subdict.items():
                             if extension in sub_extensions:
@@ -96,12 +92,9 @@ def organize_files(source_folder, categories):
                         if found_category_path:
                             break 
                 
-                # Se não encontrou em nenhuma categoria, usa "Other"
                 if not found_category_path:
                     found_category_path = ["Other"]
             
-            # Usa '*' para desempacotar a lista e construir o caminho
-            # ex: os.path.join(source_folder, "Documents", "PDFs")
             destination_folder = os.path.join(source_folder, *found_category_path)
             
             if not os.path.exists(destination_folder):
@@ -124,7 +117,6 @@ def organize_files(source_folder, categories):
                 print(f"Error moving file '{filename}': {e}")
                 files_skipped += 1
         
-        # --- 2. Lógica para PASTAS (Inalterada) ---
         elif os.path.isdir(item_path):
             if filename in category_folders:
                 continue
