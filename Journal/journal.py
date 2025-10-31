@@ -4,8 +4,11 @@ import requests
 import datetime
 import time
 from dotenv import load_dotenv
-import feedparser ### NOVO ###
-from email.utils import mktime_tz, parsedate_tz ### NOVO ###
+import feedparser
+from email.utils import mktime_tz, parsedate_tz
+
+from core.database import save_articles_to_db
+from core import models 
 
 load_dotenv()
 
@@ -37,37 +40,10 @@ RSS_FEEDS = [
 ]
 NEWS_LIMIT_PER_TOPIC = 10
 DAYS_TO_KEEP_ARTICLES = 30
-# ---------------------
 
-def setup_database(db_name):
-    try:
-        conn = sqlite3.connect(db_name)
-        cursor = conn.cursor()
-        
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS articles (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            source_name TEXT,
-            url TEXT NOT NULL UNIQUE,
-            published_at TEXT NOT NULL,
-            topic TEXT NOT NULL,
-            downloaded_at TEXT NOT NULL,
-            generic_news BOOLEAN
-        )
-        """)
-        
-        conn.commit()
-    except sqlite3.Error as e:
-        print(f"Database error during setup: {e}")
-    finally:
-        if conn:
-            conn.close()
+
 
 def fetch_news(api_key, query_value, limit, search_type='topic'):
-    """
-    Busca notícias por 'topic' (usando top-headlines) ou 'site' (usando search).
-    """
     params = {
         'token': api_key,
         'lang': 'pt',
@@ -136,42 +112,7 @@ def fetch_news_from_rss(feed_url, limit):
         print(f"An error occurred during RSS fetch: {e}")
         return []
 
-def save_articles_to_db(db_name, articles, topic, generic=True):
-    if not articles:
-        return
 
-    try:
-        conn = sqlite3.connect(db_name)
-        cursor = conn.cursor()
-        
-        current_time = datetime.datetime.now().isoformat()
-        articles_to_insert = []
-        
-        for article in articles:
-            title = article.get('title')
-            source_name = article.get('source', {}).get('name')
-            url = article.get('url')
-            published_at = article.get('publishedAt')
-            
-            if all([title, url, published_at]):
-                articles_to_insert.append(
-                    (title, source_name, url, published_at, topic, current_time, generic)
-                )
-
-        cursor.executemany("""
-        INSERT OR IGNORE INTO articles 
-            (title, source_name, url, published_at, topic, downloaded_at, generic_news)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, articles_to_insert)
-        
-        conn.commit()
-        print(f"  > Saved {cursor.rowcount} new articles for '{topic}'.")
-        
-    except sqlite3.Error as e:
-        print(f"Database error during save: {e}")
-    finally:
-        if conn:
-            conn.close()
 
 def delete_old_articles(db_name, days_old):
     try:
@@ -197,20 +138,20 @@ def delete_old_articles(db_name, days_old):
 
 def main():
     print("Starting MyJournal...")
-    setup_database(DB_NAME)
+    models.setup_database_orm()
     
     print("Fetching news articles...")
-    for topic in TOPICS:
-        print(f"- Fetching topic: '{topic}'")
-        articles = fetch_news(API_KEY, topic, NEWS_LIMIT_PER_TOPIC)
-        save_articles_to_db(DB_NAME, articles, topic)
-        time.sleep(1) 
+    # for topic in TOPICS:
+    #     print(f"- Fetching topic: '{topic}'")
+    #     articles = fetch_news(API_KEY, topic, NEWS_LIMIT_PER_TOPIC)
+    #     save_articles_to_db(articles, topic)
+    #     time.sleep(1) 
     
     print("\nFetching news from specific sites (RSS)...")
     for rss in RSS_FEEDS:
         print(f"- Fetching from RSS: '{rss["name"]}'")
         articles = fetch_news_from_rss(rss["url"], NEWS_LIMIT_PER_TOPIC)
-        save_articles_to_db(DB_NAME, articles, rss["topic"], generic=False)
+        save_articles_to_db(articles, rss["topic"], generic=False)
         time.sleep(1)
         
     print("\nFetching news from specific sites...")

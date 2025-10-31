@@ -2,41 +2,16 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 
+
+from Journal.core.database import load_all_articles_as_df
+
 DB_NAME = "my_journal.db"
 
-@st.cache_data 
-def load_data():
-    try:
-        conn = sqlite3.connect(DB_NAME)
-        
-        query = """
-            SELECT 
-                title AS "Título", 
-                url AS "URL", 
-                source_name AS "Fonte", 
-                topic AS "Tópico", 
-                published_at, 
-                ID,
-                generic_news 
-            FROM articles 
-            ORDER BY published_at DESC
-        """
-        # ---------------------
-        
-        df = pd.read_sql_query(query, conn)
-        return df
-    except sqlite3.Error as e:
-        st.error(f"Ocorreu um erro ao ler o banco de dados: {e}")
-        return pd.DataFrame(columns=["Título", "URL", "Fonte", "Tópico", "published_at", "ID", "generic_news"])
-    finally:
-        if 'conn' in locals() and conn:
-            conn.close()
 
 st.set_page_config(page_title="MyJournal", layout="wide")
 st.title("MyJournal - Arquivo de Notícias 📰")
 
-df = load_data()
-
+df = load_all_articles_as_df()
 if df.empty:
     st.warning("O banco de dados está vazio. Execute o script principal de coleta de notícias primeiro.")
 else:
