@@ -1,7 +1,8 @@
 import os
 from pathlib import Path
-from sqlalchemy import DateTime, create_engine, Column, Integer, String, Boolean
+from sqlalchemy import DateTime, create_engine, Column, Integer, String, Boolean, func
 from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import relationship
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -29,6 +30,20 @@ class Article(Base):
     downloaded_at = Column(DateTime, nullable=False)
     generic_news = Column(Boolean)
 
+class User(Base):
+    __tablename__ = 'users'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(50), unique=True, nullable=False, index=True)
+    email = Column(String(100), unique=True, nullable=False, index=True)
+    hashed_password = Column(String(255), nullable=False)
+    first_name = Column(String(50))
+    last_name = Column(String(50))
+    created_at = Column(DateTime, nullable=False, server_default=func.now())
+    is_active = Column(Boolean, default=True, nullable=False)
+    is_admin = Column(Boolean, default=False, nullable=False)
+    articles = relationship("Article", back_populates="author")
+    
 engine = create_engine(DATABASE_URL)
 
 def setup_database_orm():

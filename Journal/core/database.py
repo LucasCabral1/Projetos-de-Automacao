@@ -25,7 +25,7 @@ def load_all_articles_as_df():
             Article.url.label("URL"),
             Article.source_name.label("Fonte"),
             Article.topic.label("Tópico"),
-            Article.published_at,
+            func.strftime('%Y-%m-%d %H:%M:%S', Article.published_at).label("published_at"),
             Article.generic_news
         ).order_by(Article.published_at.desc())
 
@@ -77,7 +77,7 @@ def save_articles_to_db(articles, topic, generic=True):
     if not articles:
         return
 
-    current_time = datetime.datetime.now(ZoneInfo("America/Sao_Paulo")).isoformat()
+    current_time = datetime.datetime.now(ZoneInfo("America/Sao_Paulo"))
     
 
     articles_to_insert = []

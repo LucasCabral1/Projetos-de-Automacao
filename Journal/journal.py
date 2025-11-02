@@ -141,11 +141,11 @@ def main():
     models.setup_database_orm()
     
     print("Fetching news articles...")
-    # for topic in TOPICS:
-    #     print(f"- Fetching topic: '{topic}'")
-    #     articles = fetch_news(API_KEY, topic, NEWS_LIMIT_PER_TOPIC)
-    #     save_articles_to_db(articles, topic)
-    #     time.sleep(1) 
+    for topic in TOPICS:
+        print(f"- Fetching topic: '{topic}'")
+        articles = fetch_news(API_KEY, topic, NEWS_LIMIT_PER_TOPIC)
+        save_articles_to_db(articles, topic)
+        time.sleep(1) 
     
     print("\nFetching news from specific sites (RSS)...")
     for rss in RSS_FEEDS:
